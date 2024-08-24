@@ -1,19 +1,29 @@
 #include <SPI.h>
 #include "mcp2515_can.h"
 
-/*SAMD core*/
-#ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
-    #define SERIAL SerialUSB
-#else
-    #define SERIAL Serial
-#endif
+// Define fault codes
+const int ENGINE_FAULT_CODE = 0x01;
+const int TRANSMISSION_FAULT_CODE = 0x02;
+const int BODY_CONTROL_FAULT_CODE = 0x03;
+const int ABS_FAULT_CODE = 0x04;
+const int AIRBAG_FAULT_CODE = 0x05;
+const int INFOTAINMENT_FAULT_CODE = 0x06;
+const int CLIMATE_CONTROL_FAULT_CODE = 0x07;
+const int PCM_FAULT_CODE = 0x08;
+const int STEERING_FAULT_CODE = 0x09;
+const int TPMS_FAULT_CODE = 0x0A;
+const int ADAS_FAULT_CODE = 0x0B;
+
+// Timing variables
+unsigned long previousMillis[10] = {0}; // Array to store previous millis for each data type
+const unsigned long interval = 5000; // Interval of 2 seconds
 
 const int SPI_CS_PIN = 9;
 mcp2515_can CAN(SPI_CS_PIN); // Set CS pin
 
 bool sendData = false; // Flag to control data sending
 
-// Global variable declarations
+// Global variables for simulated data
 int engineSpeed = 0;
 int throttlePosition = 0;
 int engineTemperature = 0;
@@ -69,22 +79,11 @@ int adaptiveCruiseControl = 0;
 int collisionDetection = 0;
 int parkingAssist = 0;
 
-// Define fault codes
-const int ENGINE_FAULT_CODE = 0x01;
-const int TRANSMISSION_FAULT_CODE = 0x02;
-const int BODY_CONTROL_FAULT_CODE = 0x03;
-const int ABS_FAULT_CODE = 0x04;
-const int AIRBAG_FAULT_CODE = 0x05;
-const int INFOTAINMENT_FAULT_CODE = 0x06;
-const int CLIMATE_CONTROL_FAULT_CODE = 0x07;
-const int PCM_FAULT_CODE = 0x08;
-const int STEERING_FAULT_CODE = 0x09;
-const int TPMS_FAULT_CODE = 0x0A;
-const int ADAS_FAULT_CODE = 0x0B;
-
-// Timing variables for sending data
-unsigned long previousMillis[10] = {0}; // Array to store previous millis for each data type
-const unsigned long interval = 2000; // Interval of 2 seconds
+#ifdef ARDUINO_SAMD_VARIANT_COMPLIANCE
+    #define SERIAL SerialUSB
+#else
+    #define SERIAL Serial
+#endif
 
 void setup() {
     SERIAL.begin(115200);
@@ -172,6 +171,17 @@ void loop() {
         // Optional: Add a delay to prevent flooding in case the sending functions are too frequent
         delay(10); // Adjust this delay as needed
     }
+
+    if (CAN_MSGAVAIL == CAN.checkReceive()) {
+        byte len;
+        byte canMsg[8];
+        CAN.readMsgBuf(&len, canMsg);
+        String canData = "Data received - CAN ID: " + String(CAN.getCanId(), HEX) + " Data: ";
+        for (int i = 0; i < len; i++) {
+            canData += String(canMsg[i], HEX) + " ";
+        }
+        SERIAL.println(canData);
+    }
 }
 
 void updateSimulatedValues() {
@@ -184,20 +194,20 @@ void updateSimulatedValues() {
 
     // Simulate transmission data
     gearPosition = (gearPosition + 1) % 6;
-    transmissionFluidTemperature = (transmissionFluidTemperature + 1) % 120;
-    shiftCommands = (shiftCommands + 1) % 10;
+    transmissionFluidTemperature = (transmissionFluidTemperature + 1) % 150;
+    shiftCommands = (shiftCommands + 1) % 5;
     torqueConverterLockup = (torqueConverterLockup + 1) % 2;
 
     // Simulate body control data
     doorStatus = (doorStatus + 1) % 2;
-    windowPosition = (windowPosition + 5) % 100;
+    windowPosition = (windowPosition + 1) % 4;
     headlightsOn = (headlightsOn + 1) % 2;
     indicatorsOn = (indicatorsOn + 1) % 2;
     hornStatus = (hornStatus + 1) % 2;
     wiperStatus = (wiperStatus + 1) % 2;
 
     // Simulate ABS data
-    wheelSpeed = (wheelSpeed + 5) % 200;
+    wheelSpeed = (wheelSpeed + 1) % 200;
     brakePressure = (brakePressure + 1) % 100;
     absActive = (absActive + 1) % 2;
     tractionControlActive = (tractionControlActive + 1) % 2;
@@ -221,7 +231,7 @@ void updateSimulatedValues() {
 
     // Simulate PCM data
     fuelLevel = (fuelLevel + 1) % 100;
-    oxygenSensorReadings = (oxygenSensorReadings + 1) % 100;
+    oxygenSensorReadings = (oxygenSensorReadings + 1) % 5;
     emissionControls = (emissionControls + 1) % 2;
     batteryVoltage = (batteryVoltage + 1) % 15;
     alternatorOutput = (alternatorOutput + 1) % 100;
@@ -230,9 +240,15 @@ void updateSimulatedValues() {
     steeringAngle = (steeringAngle + 1) % 360;
     powerSteeringPressure = (powerSteeringPressure + 1) % 100;
 
-    // Simulate TPMS data
-    tirePressure = (tirePressure + 1) % 40;
-    tireTemperature = (tireTemperature + 1) % 100;
+    // Simulate tire pressure monitoring
+    tirePressure = (tirePressure + 1) % 50;
+    tireTemperature = (tireTemperature + 1) % 120;
+
+    // Simulate ADAS data
+    laneKeepAssist = (laneKeepAssist + 1) % 2;
+    adaptiveCruiseControl = (adaptiveCruiseControl + 1) % 2;
+    collisionDetection = (collisionDetection + 1) % 2;
+    parkingAssist = (parkingAssist + 1) % 2;
 }
 
 void sendEngineData() {
@@ -242,16 +258,16 @@ void sendEngineData() {
         (unsigned char)engineTemperature,
         (unsigned char)fuelInjectionTiming,
         (unsigned char)ignitionTiming,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        ENGINE_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)ENGINE_FAULT_CODE
     };
     CAN.sendMsgBuf(0x400, 0, 8, ecmData);
-    SERIAL.println("Engine Speed: " + String(engineSpeed));
-    SERIAL.println("Throttle Position: " + String(throttlePosition));
-    SERIAL.println("Engine Temperature: " + String(engineTemperature));
-    SERIAL.println("Fuel Injection Timing: " + String(fuelInjectionTiming));
-    SERIAL.println("Ignition Timing: " + String(ignitionTiming));
+    SERIAL.print("Engine Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(ecmData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -261,16 +277,17 @@ void sendTransmissionData() {
         (unsigned char)transmissionFluidTemperature,
         (unsigned char)shiftCommands,
         (unsigned char)torqueConverterLockup,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        TRANSMISSION_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)TRANSMISSION_FAULT_CODE
     };
-    CAN.sendMsgBuf(0x500, 0, 8, transmissionData);
-    SERIAL.println("Gear Position: " + String(gearPosition));
-    SERIAL.println("Transmission Fluid Temperature: " + String(transmissionFluidTemperature));
-    SERIAL.println("Shift Commands: " + String(shiftCommands));
-    SERIAL.println("Torque Converter Lockup: " + String(torqueConverterLockup));
+    CAN.sendMsgBuf(0x401, 0, 8, transmissionData);
+    SERIAL.print("Transmission Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(transmissionData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -282,16 +299,15 @@ void sendBodyControlData() {
         (unsigned char)indicatorsOn,
         (unsigned char)hornStatus,
         (unsigned char)wiperStatus,
-        0x00, // Placeholder for future use
-        BODY_CONTROL_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)BODY_CONTROL_FAULT_CODE
     };
-    CAN.sendMsgBuf(0x600, 0, 8, bodyControlData);
-    SERIAL.println("Door Status: " + String(doorStatus));
-    SERIAL.println("Window Position: " + String(windowPosition));
-    SERIAL.println("Headlights On: " + String(headlightsOn));
-    SERIAL.println("Indicators On: " + String(indicatorsOn));
-    SERIAL.println("Horn Status: " + String(hornStatus));
-    SERIAL.println("Wiper Status: " + String(wiperStatus));
+    CAN.sendMsgBuf(0x402, 0, 8, bodyControlData);
+    SERIAL.print("Body Control Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(bodyControlData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -301,16 +317,17 @@ void sendAbsData() {
         (unsigned char)brakePressure,
         (unsigned char)absActive,
         (unsigned char)tractionControlActive,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        ABS_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)ABS_FAULT_CODE
     };
-    CAN.sendMsgBuf(0x700, 0, 8, absData);
-    SERIAL.println("Wheel Speed: " + String(wheelSpeed));
-    SERIAL.println("Brake Pressure: " + String(brakePressure));
-    SERIAL.println("ABS Active: " + String(absActive));
-    SERIAL.println("Traction Control Active: " + String(tractionControlActive));
+    CAN.sendMsgBuf(0x403, 0, 8, absData);
+    SERIAL.print("ABS Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(absData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -319,16 +336,18 @@ void sendAirbagData() {
         (unsigned char)airbagDeployment,
         (unsigned char)crashSensorsActive,
         (unsigned char)seatbeltTensionerActive,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        AIRBAG_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)AIRBAG_FAULT_CODE
     };
-    CAN.sendMsgBuf(0x800, 0, 8, airbagData);
-    SERIAL.println("Airbag Deployment: " + String(airbagDeployment));
-    SERIAL.println("Crash Sensors Active: " + String(crashSensorsActive));
-    SERIAL.println("Seatbelt Tensioner Active: " + String(seatbeltTensionerActive));
+    CAN.sendMsgBuf(0x404, 0, 8, airbagData);
+    SERIAL.print("Airbag Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(airbagData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -338,16 +357,17 @@ void sendInfotainmentData() {
         (unsigned char)radioOn,
         (unsigned char)gpsOn,
         (unsigned char)bluetoothConnected,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        INFOTAINMENT_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)INFOTAINMENT_FAULT_CODE
     };
-    CAN.sendMsgBuf(0x900, 0, 8, infotainmentData);
-    SERIAL.println("Audio Volume: " + String(audioVolume));
-    SERIAL.println("Radio On: " + String(radioOn));
-    SERIAL.println("GPS On: " + String(gpsOn));
-    SERIAL.println("Bluetooth Connected: " + String(bluetoothConnected));
+    CAN.sendMsgBuf(0x405, 0, 8, infotainmentData);
+    SERIAL.print("Infotainment Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(infotainmentData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -357,16 +377,17 @@ void sendClimateControlData() {
         (unsigned char)fanSpeed,
         (unsigned char)acCompressorOn,
         (unsigned char)airVentPosition,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        CLIMATE_CONTROL_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)CLIMATE_CONTROL_FAULT_CODE
     };
-    CAN.sendMsgBuf(0xA00, 0, 8, climateControlData);
-    SERIAL.println("Cabin Temperature: " + String(cabinTemperature));
-    SERIAL.println("Fan Speed: " + String(fanSpeed));
-    SERIAL.println("AC Compressor On: " + String(acCompressorOn));
-    SERIAL.println("Air Vent Position: " + String(airVentPosition));
+    CAN.sendMsgBuf(0x406, 0, 8, climateControlData);
+    SERIAL.print("Climate Control Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(climateControlData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -377,16 +398,16 @@ void sendPcmData() {
         (unsigned char)emissionControls,
         (unsigned char)batteryVoltage,
         (unsigned char)alternatorOutput,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        PCM_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)PCM_FAULT_CODE
     };
-    CAN.sendMsgBuf(0xB00, 0, 8, pcmData);
-    SERIAL.println("Fuel Level: " + String(fuelLevel));
-    SERIAL.println("Oxygen Sensor Readings: " + String(oxygenSensorReadings));
-    SERIAL.println("Emission Controls: " + String(emissionControls));
-    SERIAL.println("Battery Voltage: " + String(batteryVoltage));
-    SERIAL.println("Alternator Output: " + String(alternatorOutput));
+    CAN.sendMsgBuf(0x407, 0, 8, pcmData);
+    SERIAL.print("PCM Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(pcmData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -394,16 +415,19 @@ void sendSteeringData() {
     unsigned char steeringData[8] = {
         (unsigned char)steeringAngle,
         (unsigned char)powerSteeringPressure,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        STEERING_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)STEERING_FAULT_CODE
     };
-    CAN.sendMsgBuf(0xC00, 0, 8, steeringData);
-    SERIAL.println("Steering Angle: " + String(steeringAngle));
-    SERIAL.println("Power Steering Pressure: " + String(powerSteeringPressure));
+    CAN.sendMsgBuf(0x408, 0, 8, steeringData);
+    SERIAL.print("Steering Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(steeringData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
 
@@ -411,15 +435,18 @@ void sendTpmsData() {
     unsigned char tpmsData[8] = {
         (unsigned char)tirePressure,
         (unsigned char)tireTemperature,
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        0x00, // Placeholder for future use
-        TPMS_FAULT_CODE
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)0x00, // Placeholder
+        (unsigned char)TPMS_FAULT_CODE
     };
-    CAN.sendMsgBuf(0xD00, 0, 8, tpmsData);
-    SERIAL.println("Tire Pressure: " + String(tirePressure));
-    SERIAL.println("Tire Temperature: " + String(tireTemperature));
+    CAN.sendMsgBuf(0x409, 0, 8, tpmsData);
+    SERIAL.print("TPMS Data Sent: ");
+    for (int i = 0; i < 8; i++) {
+        SERIAL.print(tpmsData[i], HEX);
+        SERIAL.print(" ");
+    }
     SERIAL.println();
 }
