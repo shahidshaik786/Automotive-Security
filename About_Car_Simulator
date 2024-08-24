@@ -1,0 +1,166 @@
+1. Engine Control Module (ECM)
+•	Engine Speed (RPM): Increases or decreases based on gear position.
+•	Throttle Position: Adjusts with the gear position.
+•	Engine Temperature: Increases with higher engine speed and throttle position.
+•	Fuel Injection Timing: Typically related to engine load and RPM.
+•	Ignition Timing: Adjusted based on engine load, RPM, and temperature.
+2. Transmission Control Module (TCM)
+•	Gear Position: 1-5 for forward, 1 for reverse.
+•	Transmission Fluid Temperature: Related to the transmission's operation.
+•	Shift Commands: Auto shifting during a 500 km journey.
+•	Torque Converter Lockup Status: Engages at certain speeds to improve efficiency.
+3. Body Control Module (BCM)
+•	Door Status (Open/Closed): Closed while the car is moving.
+•	Window Position: Can vary between open and closed.
+•	Lighting Control: Headlights on in tunnels, indicators for lane changes.
+•	Horn Status: Occasionally active in traffic.
+•	Wiper Status: Active due to rainy conditions.
+4. Anti-lock Braking System (ABS)
+•	Wheel Speed Sensors: Dependent on gear position.
+•	Brake Pressure: Varies with braking events.
+•	ABS Activation Status: Active.
+•	Traction Control Activation: Engages in slippery conditions.
+5. Airbag Control Module
+•	Airbag Deployment Status: Active.
+•	Crash Sensors: Monitoring for impacts.
+•	Seatbelt Tensioner Status: Active.
+6. Infotainment System
+•	Audio Volume Level: Set at 30%.
+•	Radio Station or Media Source: FM/AM Radio active throughout the journey.
+•	Navigation Data: Active GPS.
+•	Bluetooth Connection Status: Connected to a mobile device.
+7. Climate Control System
+•	Cabin Temperature: Lower than room temperature.
+•	Fan Speed: Normal.
+•	AC Compressor Status: On.
+•	Air Vent Position: Directed at the driver.
+8. Powertrain Control Module (PCM)
+•	Fuel Level: Full tank, decreasing to 30%.
+•	Oxygen Sensor Readings: Monitors air-fuel ratio.
+•	Emission Controls: Active to reduce emissions.
+•	Battery Voltage: Monitored for proper operation.
+•	Alternator Output: Regulates charging system.
+9. Steering and Suspension System
+•	Steering Angle: Adjusted based on road curves.
+•	Power Steering Pressure: Varies with steering effort.
+10. Tire Pressure Monitoring System (TPMS)
+•	Tire Pressure: Maintained at a normal level.
+•	Tire Temperature: Kept at a stable level.
+11. Advanced Driver Assistance Systems (ADAS)
+•	Lane Keep Assist: Helps maintain lane position.
+•	Adaptive Cruise Control: Adjusts speed to maintain distance.
+•	Collision Detection: Alerts and assists in avoiding collisions.
+•	Parking Assist Sensors: Helps with parking maneuvers.
+
+############### CAN IDs ###############
+Anti-lock Braking System (ABS)
+•	Wheel Speed Sensors: 0x100 (Highest priority due to critical nature)
+•	Brake Pressure: 0x101
+•	ABS Activation Status: 0x102
+•	Traction Control Activation: 0x103
+Engine Control Module (ECM)
+•	Engine Speed (RPM): 0x200
+•	Throttle Position: 0x201
+•	Engine Temperature: 0x202
+•	Fuel Injection Timing: 0x203
+•	Ignition Timing: 0x204
+Transmission Control Module (TCM)
+•	Gear Position: 0x300
+•	Transmission Fluid Temperature: 0x301
+•	Shift Commands: 0x302
+•	Torque Converter Lockup Status: 0x303
+Body Control Module (BCM)
+•	Door Status (Open/Closed): 0x400
+•	Window Position: 0x401
+•	Lighting Control (Headlights, Indicators, Interior Lights): 0x402
+•	Horn Status: 0x403
+•	Wiper Status: 0x404
+Airbag Control Module
+•	Airbag Deployment Status: 0x500
+•	Crash Sensors: 0x501
+•	Seatbelt Tensioner Status: 0x502
+Infotainment System
+•	Audio Volume Level: 0x600
+•	Radio Station or Media Source: 0x601
+•	Navigation Data: 0x602
+•	Bluetooth Connection Status: 0x603
+Climate Control System
+•	Cabin Temperature: 0x700
+•	Fan Speed: 0x701
+•	AC Compressor Status: 0x702
+•	Air Vent Position: 0x703
+Powertrain Control Module (PCM)
+•	Fuel Level: 0x800
+•	Oxygen Sensor Readings: 0x801
+•	Emission Controls: 0x802
+•	Battery Voltage: 0x803
+•	Alternator Output: 0x804
+Steering and Suspension System
+•	Steering Angle: 0x900
+•	Power Steering Pressure: 0x901
+Tire Pressure Monitoring System (TPMS)
+•	Tire Pressure: 0xA00
+•	Tire Temperature: 0xA01
+Advanced Driver Assistance Systems (ADAS)
+•	Lane Keep Assist: 0xB00
+•	Adaptive Cruise Control: 0xB01
+•	Collision Detection: 0xB02
+•	Parking Assist Sensors: 0xB03	
+
+############### CAN Fault IDs ###############
+Anti-lock Braking System (ABS)
+•	ABS Fault Code: 0xF30
+•	Wheel Speed Sensor Fault: 0xF31
+•	Brake Pressure Sensor Fault: 0xF32
+•	ABS Activation Error: 0xF33
+•	Traction Control Fault: 0xF34
+Engine Control Module (ECM)
+•	Engine Fault Code: 0xF00
+•	Throttle Position Sensor Fault: 0xF01
+•	Engine Temperature Sensor Fault: 0xF02
+•	Fuel Injection System Fault: 0xF03
+•	Ignition System Fault: 0xF04
+Transmission Control Module (TCM)
+•	Transmission Fault Code: 0xF10
+•	Gear Position Sensor Fault: 0xF11
+•	Transmission Fluid Temperature Sensor Fault: 0xF12
+•	Shift Command Error: 0xF13
+•	Torque Converter Lockup Fault: 0xF14
+Body Control Module (BCM)
+•	Door Status Error: 0xF20
+•	Window Position Error: 0xF21
+•	Lighting System Fault: 0xF22
+•	Horn Status Error: 0xF23
+•	Wiper System Fault: 0xF24
+Airbag Control Module
+•	Airbag Fault Code: 0xF40
+•	Crash Sensor Fault: 0xF41
+•	Seatbelt Tensioner Fault: 0xF42
+Infotainment System
+•	Audio System Error: 0xF50
+•	Radio Station Error: 0xF51
+•	Navigation System Error: 0xF52
+•	Bluetooth Connection Error: 0xF53
+Climate Control System
+•	Cabin Temperature Sensor Fault: 0xF60
+•	Fan Speed Error: 0xF61
+•	AC Compressor Fault: 0xF62
+•	Air Vent Position Error: 0xF63
+Powertrain Control Module (PCM)
+•	Fuel Level Sensor Fault: 0xF70
+•	Oxygen Sensor Fault: 0xF71
+•	Emission Control Fault: 0xF72
+•	Battery Voltage Fault: 0xF73
+•	Alternator Output Fault: 0xF74
+Steering and Suspension System
+•	Steering Angle Sensor Fault: 0xF80
+•	Power Steering Pressure Fault: 0xF81
+Tire Pressure Monitoring System (TPMS)
+•	Tire Pressure Sensor Fault: 0xF90
+•	Tire Temperature Sensor Fault: 0xF91
+Advanced Driver Assistance Systems (ADAS)
+•	Lane Keep Assist Fault: 0xFA0
+•	Adaptive Cruise Control Fault: 0xFA1
+•	Collision Detection Fault: 0xFA2
+•	Parking Assist Sensors Fault: 0xFA3
+
