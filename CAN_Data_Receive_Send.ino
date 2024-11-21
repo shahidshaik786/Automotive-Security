@@ -13,6 +13,9 @@ const int PCM_FAULT_CODE = 0x08;
 const int STEERING_FAULT_CODE = 0x09;
 const int TPMS_FAULT_CODE = 0x0A;
 const int ADAS_FAULT_CODE = 0x0B;
+// added by me
+unsigned long canId = 0x123; // Example CAN ID, replace with your value or logic.
+
 
 // Timing variables
 unsigned long previousMillis[10] = {0}; // Array to store previous millis for each data type
@@ -181,6 +184,9 @@ void loop() {
             canData += String(canMsg[i], HEX) + " ";
         }
         SERIAL.println(canData);
+
+    // Send acknowledgment for the received CAN packet
+    sendAcknowledgment(canId);
     }
 }
 
@@ -449,4 +455,14 @@ void sendTpmsData() {
         SERIAL.print(" ");
     }
     SERIAL.println();
+}
+
+void sendAcknowledgment(unsigned long canId) {
+    // Prepare the acknowledgment packet
+    unsigned char ackData[8] = {
+        0xAC, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+    };
+    CAN.sendMsgBuf(canId, 0, 8, ackData); // Send acknowledgment to the sender's CAN ID
+    SERIAL.print("Acknowledgment Sent for CAN ID: ");
+    SERIAL.println(canId, HEX);
 }
