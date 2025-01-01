@@ -1,5 +1,12 @@
+
 #include <SPI.h>
 #include "mcp2515_can.h"
+
+
+// Include UDS-related defines ----- UDS
+#define UDS_SERVICE_READ_DATA_BY_ID 0x22
+#define UDS_SERVICE_CLEAR_DIAGNOSTIC_INFO 0x14
+
 
 // Define fault codes
 const int ENGINE_FAULT_CODE = 0x01;
@@ -102,6 +109,31 @@ void setup() {
 
 void loop() {
     unsigned long currentMillis = millis();
+
+// CAN UDS SOL
+// CAN UDS packets you can send from the other device
+// cansend can0 7DF#0201000000000000 - Start Diagnostic Session
+// cansend can0 7DF#030122F190000000 - Read Data by Identifier (DID)
+// cansend can0 7DF#0201140000000000 - Clear Diagnostic Trouble Codes (DTCs)
+// 
+    if (CAN_MSGAVAIL == CAN.checkReceive()) {
+        byte len;
+        byte canMsg[8];
+        CAN.readMsgBuf(&len, canMsg);
+
+        // Check if the message is a UDS request
+        if (CAN.getCanId() == 0x7DF) { // Default UDS request ID
+            handleUdsRequest(canMsg, len);
+        } else {
+            // Handle other CAN messages as before
+            String canData = "Data received - CAN ID: " + String(CAN.getCanId(), HEX) + " Data: ";
+            for (int i = 0; i < len; i++) {
+                canData += String(canMsg[i], HEX) + " ";
+            }
+            SERIAL.println(canData);
+        }
+    }
+// CAN UDS EOL
 
     if (Serial.available() > 0) {
         String command = Serial.readStringUntil('\n'); // Read until newline
@@ -466,3 +498,54 @@ void sendAcknowledgment(unsigned long canId) {
     SERIAL.print("Acknowledgment Sent for CAN ID: ");
     SERIAL.println(canId, HEX);
 }
+
+void handleUdsRequest(byte* request, byte length) {
+    if (length < 2) return; // Minimum UDS request length
+
+    byte service = request[0];
+    switch (service) {
+        case UDS_SERVICE_READ_DATA_BY_ID:
+            if (length >= 3) {
+                unsigned int dataIdentifier = (request[1] << 8) | request[2];
+                sendUdsReadDataResponse(dataIdentifier);
+            }
+            break;
+
+        case UDS_SERVICE_CLEAR_DIAGNOSTIC_INFO:
+            sendUdsClearDiagnosticResponse();
+            break;
+
+        default:
+            SERIAL.println("Unsupported UDS service");
+            break;
+    }
+}
+
+void sendUdsReadDataResponse(unsigned int dataIdentifier) {
+    byte response[8] = {0};
+    response[0] = UDS_SERVICE_READ_DATA_BY_ID | 0x40; // Positive response
+    response[1] = (byte)(dataIdentifier >> 8);
+    response[2] = (byte)(dataIdentifier & 0xFF);
+
+    // Example: Respond with dummy data for the identifier
+    if (dataIdentifier == 0xF190) { // Example ID for VIN
+        response[3] = 'A'; // Dummy data
+        response[4] = 'B'; // Replace with actual data
+        response[5] = 'C';
+        CAN.sendMsgBuf(0x7E8, 0, 8, response);
+        SERIAL.println("VIN data sent.");
+    } else {
+        response[3] = 0x00; // Default dummy data
+        CAN.sendMsgBuf(0x7E8, 0, 8, response);
+        SERIAL.println("Other data sent.");
+    }
+}
+
+void sendUdsClearDiagnosticResponse() {
+    byte response[8] = {0};
+    response[0] = UDS_SERVICE_CLEAR_DIAGNOSTIC_INFO | 0x40; // Positive response
+    CAN.sendMsgBuf(0x7E8, 0, 8, response);
+    SERIAL.println("Clear diagnostics response sent.");
+}
+
+// UDS functions EOL
